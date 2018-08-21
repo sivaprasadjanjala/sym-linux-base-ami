@@ -1,0 +1,7 @@
+DEPENDENCIES
+  cloudwatch_logs_agent
+    path: .
+    metadata: true
+
+GRAPH
+  cloudwatch_logs_agent (1.0.3)

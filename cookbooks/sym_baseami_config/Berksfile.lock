@@ -1,0 +1,13 @@
+DEPENDENCIES
+  s3_file
+    git: https://github.com/reancloud/s3_file.git
+    revision: 904bcf943c5d562e75d91e0cc9dbe34dfc3ab89d
+    ref: master
+  sym_baseami_config
+    path: .
+    metadata: true
+
+GRAPH
+  s3_file (2.8.1)
+  sym_baseami_config (0.1.0)
+    s3_file (~> 2.8.1)

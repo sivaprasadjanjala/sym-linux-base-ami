@@ -1,0 +1,110 @@
+{
+  "IsEnabled": true,
+  "EngineConfiguration": {
+    "Components": [
+
+      <%
+   ### Start of EventLogs ###
+   last_log_name = nil
+   @eventlogs.each do |k, v|
+    a = []
+    a << k
+    last_log_name = a.last
+   end
+   event_log_names = []
+   @eventlogs.each do |log_name, log_configs|
+   event_log_names << log_name
+   %>
+
+      {
+        "Id": "<%= log_name.tr('/', '').tr(' ', '') %>Input",
+        "FullName": "AWS.EC2.Windows.CloudWatch.EventLog.EventLogInputComponent,AWS.EC2.Windows.CloudWatch",
+        "Parameters": {
+          "LogName": "<%= log_name %>",
+          "Levels": "7"
+        }
+      },
+      {
+        "Id": "<%= log_name.tr('/', '').tr(' ', '') %>Output",
+        "FullName": "AWS.EC2.Windows.CloudWatch.CloudWatchLogsOutput,AWS.EC2.Windows.CloudWatch",
+        "Parameters": {
+          "AccessKey": "",
+          "SecretKey": "",
+          "Region": "<%= node['cloudwatch_logs_agent']['region'] %>",
+          "LogGroup": "<%= log_configs['log_group_name']  %>",
+          "LogStream": "<%= log_configs['log_stream_name']  %>"
+        }
+      }
+
+      <% if event_log_names != log_name %>
+      ,
+
+      <% elsif @customlogs.length != 0 %>
+      ,
+      <% end %>
+      <% end
+      ### End of EventLogs ###
+      %>
+
+      <%
+         ### Start of CustomLogs ###
+         last_log_name = nil
+         @customlogs.each do |k, v|
+          a = []
+          a << k
+          last_log_name = a.last
+         end
+         custom_log_names = []
+         @customlogs.each do |log_name, log_configs|
+          input_log_configs = log_configs.clone
+          output_log_configs = log_configs.clone
+          input_log_configs.delete('log_group_name')
+          input_log_configs.delete('log_stream_name')
+
+          custom_log_names << log_name
+         %>
+
+      {
+        "FullName": "AWS.EC2.Windows.CloudWatch.CustomLog.CustomLogInputComponent,AWS.EC2.Windows.CloudWatch",
+        "Id": "<%= log_name.tr('/', '').tr(' ', '') %>Input",
+        "Parameters":
+        <%= input_log_configs.to_json %>
+      },
+      {
+        "FullName": "AWS.EC2.Windows.CloudWatch.CloudWatchLogsOutput,AWS.EC2.Windows.CloudWatch",
+        "Id": "<%= log_name.tr('/', '').tr(' ', '') %>Output",
+        "Parameters": {
+          "LogGroup": "<%= output_log_configs['log_group_name'] || output_log_configs['LogGroup'] %>",
+          "LogStream": "<%= output_log_configs['log_stream_name'] || output_log_configs['LogStream'] %>",
+          "Region": "<%= node['cloudwatch_logs_agent']['region'] %>",
+          "SecretKey": "",
+          "AccessKey": ""
+        }
+      }
+      <% unless last_log_name == log_name %>
+    ,
+      <% end %>
+      <% end
+      ### End of CustomLogs ###
+      %>
+    ],
+    "Flows": {
+      "Flows": [
+        <%
+        log_names = []
+        log_names = custom_log_names + event_log_names
+        last_log_name = log_names.last
+        log_names.each do |log_name|
+          input = log_name.tr('/', '').tr(' ', '') + 'Input'
+          output = log_name.tr('/', '').tr(' ', '') + 'Output'
+          %>
+        "<%= input + ',' + output %>"
+        <% unless last_log_name == log_name %>
+      ,
+        <% end %>
+        <% end %>
+      ]
+    },
+    "PollInterval": "00:00:15"
+  }
+}

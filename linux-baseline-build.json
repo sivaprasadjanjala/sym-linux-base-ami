@@ -1,0 +1,125 @@
+{
+    "variables": {
+        "region":         "us-gov-west-1",
+        "Name":           "TEST_MGMT_RHEL7_BaseAMI_Packer",
+        "Owner":             "sivaprasadjanjala",
+        "Environment":       "SFC_BASE",
+        "vpc_id":            "vpc-2f4f6a4axxx ",
+        "security_group_id": "sg-881b86ecxx",
+        "subnet_id":         "subnet-e27b8794xx",
+        "source_ami":            "ami-0466e865xxx",
+        "instance_type":         "t2.medium",
+        "root_volume_size":      "100",
+        "ebs_volume_size" :      "200",
+        "businessunit":          "SFC",
+        "environment":           "SFC",
+        "iam_instance_profile":  "xxx-xxx-base-ami-packer-instance-profile",
+        "productline":           "adl",
+        "costcenter":            "NIL",
+        "SXAPPID":               "12345678",
+        "appname":               "SFC-AD",
+        "supportemail":          "sivaprasadjanjala@gmail.com",
+        "team":                  "MEGAPOWERTEAM",
+        "Project":    "ProductionProject",
+        "ExpirationDate": "2018-08-14"
+    },
+    "builders": [
+        {
+          "name": "{{user `Name`}}",
+          "type": "amazon-ebs",
+          "ssh_pty": true,
+          "ssh_username": "ec2-user",
+          "ami_block_device_mappings": [
+            {
+              "device_name": "/dev/sda1",
+              "volume_type": "gp2",
+              "volume_size": "{{user `root_volume_size`}}",
+              "delete_on_termination": true
+            },
+            {
+              "device_name": "/dev/sdf",
+              "volume_type": "gp2",
+              "volume_size": "{{user `ebs_volume_size`}}",
+              "encrypted": true,
+              "delete_on_termination": true
+            }
+          ],
+          "launch_block_device_mappings": [
+            {
+              "device_name": "/dev/sda1",
+              "volume_type": "gp2",
+              "volume_size": "{{user `root_volume_size`}}",
+              "delete_on_termination": true
+            },
+            {
+              "device_name": "/dev/sdf",
+              "volume_type": "gp2",
+              "volume_size": "{{user `ebs_volume_size`}}",
+              "encrypted": true,
+              "delete_on_termination": true
+            }
+          ],
+          "run_tags":{
+              "Environment":            "{{user `Environment`}}",
+              "Project":                "{{user `Project`}}",
+              "ExpirationDate":          "{{user `ExpirationDate`}}",
+              "Owner":                "{{user `Owner`}}",
+              "Name":                "{{user `Name`}}"
+          },
+          "tags":{
+              "BusinessUnit":           "{{user `businessunit`}}",
+              "Environment":            "{{user `environment`}}",
+              "ProductLine":            "{{user `productline`}}",
+              "CostCenter":             "{{user `costcenter`}}",
+              "SXAPPID":                "{{user `SXAPPID`}}",
+              "AppName":                "{{user `appname`}}",
+              "SupportEmail":           "{{user `supportemail`}}",
+              "Team":                   "{{user `team`}}"
+          },
+          "associate_public_ip_address": "false",
+          "ssh_interface": "private_ip",
+          "ami_name": "{{user `Name`}} {{timestamp}}",
+          "ami_description":      "{{user `Name`}} AMI",
+          "region": "{{user `region`}}",
+          "vpc_id":               "{{user `vpc_id`}}",
+          "subnet_id":            "{{user `subnet_id`}}",
+          "security_group_id":    "{{user `security_group_id`}}",
+          "source_ami":           "{{user `source_ami`}}",
+          "instance_type":        "{{user `instance_type`}}",
+          "iam_instance_profile": "{{user `iam_instance_profile`}}"
+        }
+    ],
+    "provisioners": [
+    {
+      "type": "chef-solo",
+      "cookbook_paths": [
+        "cookbooks"
+      ],
+      "run_list": [
+        "cloudwatch_logs_agent",
+        "sym_baseami_config"
+      ]
+    },
+    {
+      "type": "shell",
+      "execute_command": "{{ .Vars }} sudo -E -S bash '{{ .Path }}'",
+      "scripts": [
+        "scripts/bootstrap.sh"
+      ]
+    },
+    {
+      "type": "shell",
+      "execute_command": "{{ .Vars }} sudo -E -S bash '{{ .Path }}'",
+      "scripts": [
+        "scripts/ansible-installation.sh"
+      ]
+    },
+    {
+    "type": "shell",
+    "execute_command": "{{ .Vars }} sudo -E -S bash '{{ .Path }}'",
+    "scripts": [
+      "scripts/cleanup.sh"
+    ]
+   }
+  ]
+}
